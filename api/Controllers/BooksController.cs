@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Fisher.Bookstore.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Fisher.Bookstore.Data
+namespace Fisher.Bookstore.Api.Controllers
 {
     [Route("api/books")]
     [ApiController]
     public class BooksController : ControllerBase
     {
         private readonly BookstoreContext db;
-
         public BooksController(BookstoreContext db)
         {
             this.db = db;
@@ -22,45 +22,51 @@ namespace Fisher.Bookstore.Data
                 {
                     Id = 1,
                     Title = "Design Patterns",
-                    Author = new Author(),
+                    Author = new Author(){
+                        Id = 1,
+                        Name = "Erich Gamma"
+                    },
                     ISBN = "978-0201633610"
                 });
                 this.db.Books.Add(new Book()
                 {
                     Id = 2,
                     Title = "Continuous Delivery",
-                    Author = new Author(),
+                    Author = new Author(){
+                        Id = 2,
+                        Name = "Jez Humble",
+                    },
                     ISBN = "978-0321601919"
                 });
                 this.db.Books.Add(new Book()
                 {
                     Id = 3,
                     Title = "The DevOps Handbook",
-                    Author = new Author(),
+                    Author = new Author(){
+                        Id = 3,
+                        Name = "Gene Kim",
+                    },
                     ISBN = "978-1942788003"
                 });
             }
             this.db.SaveChanges();
         }
-
         [HttpGet]
-        public IActionResult Get()
+        public IActionResult GetAction()
         {
             return Ok(db.Books);
         }
-
-        [HttpGet("{id}", Name = "GetBook")]
+        [HttpGet("{id}")]
         public IActionResult GetBook(int id)
         {
             var book = db.Books.FirstOrDefault(b => b.Id == id);
-
             if (book == null)
             {
                 return NotFound();
             }
-
             return Ok(book);
         }
+        [Authorize]
         [HttpPost]
         public IActionResult Post([FromBody]Book book)
         {
@@ -71,12 +77,13 @@ namespace Fisher.Bookstore.Data
             db.Books.Add(book);
             db.SaveChanges();
 
-            return CreatedAtRoute("GetBook", new Book{Id = book.Id}, book);
+            return CreatedAtRoute("GetBook", new Book{ Id = book.Id}, book);
         }
+        [Authorize]
         [HttpPut("{id}")]
         public IActionResult Put(int id, [FromBody]Book book)
         {
-            if(book == null || book.Id != id)
+            if (book == null || book.Id != id)
             {
                 return BadRequest();
             }
@@ -85,31 +92,26 @@ namespace Fisher.Bookstore.Data
             {
                 return NotFound();
             }
-
             bookToEdit.Title = book.Title;
             bookToEdit.ISBN = book.ISBN;
-
             db.Books.Update(bookToEdit);
             db.SaveChanges();
 
             return NoContent();
-
         }
+        [Authorize]
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
             var book = db.Books.FirstOrDefault(b => b.Id == id);
-
             if (book == null)
             {
                 return NotFound();
             }
-
             db.Books.Remove(book);
             db.SaveChanges();
 
             return NoContent();
         }
-
     }
 }
